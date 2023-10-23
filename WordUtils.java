@@ -43,22 +43,58 @@ public class WordUtils
 	 */
 	public String [] findAllWords (String letters)
 	{
-		for (int i = 0; i < words.length; i++) {
+		String [] wordsFound = new String[words.length];
+		for (int i = 0; i < words.length; i++) 
+		{
 			String word = words[i];
-			if (isWordMatch(word, letters)) {
-				int numChars = word.length();
-				words[numChars][numWords[numChars]] = word;
-				numWords[numChars]++;
+			if (isWordMatch(word, letters)) 
+			{
+				wordsFound[i] = word;
 			}
 		}
 		
-		return new String[10];
+		for (int i = 0; i < wordsFound.length; i++)
+		{
+			String word = words
+		}
+		return wordsFound;
+	}
+	
+	/**
+	 *  Decides if a word matches a group of letters.
+	 *
+	 *  @param word  The word to test.
+	 *  @param letters  A string of letters to compare
+	 *  @return  true if the word matches the letters, false otherwise
+	 */
+	public boolean isWordMatch (String word, String letters) {
+		for (int a = 0; a < word.length(); a++) 
+		{
+			char c = word.charAt(a);
+			if (letters.indexOf(c) > -1) 
+				letters = letters.substring(0, letters.indexOf(c)) +
+							letters.substring(letters.indexOf(c) + 1);
+			else
+				return false;
+		}
+		return true;
 	}
 	
 	/**	Print the words found to the screen.
 	 *  @param words	array containing the words to be printed
 	 */
-	public void printWords (String [] wordList) { }
+	public void printWords (String [] wordList) 
+	{
+		System.out.println();
+		int i = 0;
+		while (i < wordList.length && wordList[i] != null) 
+		{
+			System.out.printf("%-15s", wordList[i]);
+			if ((i + 1) % 5 == 0) System.out.println();
+			i++;
+		}
+		System.out.println();
+	}
 	
 	/**	Finds the highest scoring word according to a score table.
 	 *
@@ -68,6 +104,7 @@ public class WordUtils
 	 */
 	public String bestWord (String [] wordList, int [] scoreTable)
 	{
+		
 		return "";
 	}
 	
