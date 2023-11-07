@@ -10,73 +10,71 @@ public class HTMLUtilities {
 	 *	Break the HTML string into tokens. The array returned is
 	 *	exactly the size of the number of tokens in the HTML string.
 	 *	Example:	HTML string = "Goodnight moon goodnight stars"
-	 *				returns { "Goodnight", "moon", "goodnight", "stars" }
+	 *				returns { "Goodnight" "moon" "goodnight" "stars" }
 	 *	@param str			the HTML string
 	 *	@return				the String array of tokens
 	 */
 	public String[] tokenizeHTMLString(String str) {
-		/** Mr. Greenstein says: "Do a character by character analysis. 
-		 * don't do indexOf. You can do loops within loops. Routine
-		 * for tag, routine for word, routine for punctuation or number
-		 */
-		/* for number, I think you can just use parseInt */
 		// make the size of the array large to start
 		String[] result = new String[10000];
 		
 		String token = "";
 		int tokenNum = 0;
-		int index = 0;
+		int strIndex = 0;
 		char ch = ' ';
-		while (index < str.length()) {
-			ch = str.charAt(index);
-			if (ch == '<') { // start of a tag token
-				 // save the starting index into a variable to be used
-				 // later
-				 int startIndex = index;
-				 
-				 // increment index and store the next character
-				 // while the character is not the end angle bracket '>'
-				 do {
-					index++; 
-					ch = str.charAt(index);
-				 } while (ch != '>');
-				 
-				 // saves the resulting token
-				 token = str.substring(startIndex, index + 1);
-				 result[tokenNum] = token;
-				 tokenNum++; // number of tokens stored is increased.
-				 
-				 // increment index after we are done with a token
-				 index++;
-				 
-			} else if (ch.isLetter()) {
-				// save the starting index
-				int startIndex = index;
-				
-				// increment index, store the next character
-				// while the character is a letter or a hyphen surrounded
-				// by letters
-				do {
-					index++;
-					ch = str.charAt(index);
-				} while (ch.isLetter() || 
-					(ch == '-' && index < str.length() - 1 && 
-						str.charAt(index + 1).isLetter()); 
-					// the above works due to short-circuit eval
-				token = str.substring(startIndex, index);
-				result[tokenNum] = token;
-				tokenNum++; 
-				
-			} else if (/* ... */) {
-				
-			} else {
-				// not start of token, so just increment index
-				index++;
+		char nextChar = ' ';
+		
+		// remember this edge case
+		while (strIndex < str.length()) {
+			// reset token
+			token = "";
+			ch = str.charAt(strIndex);
+			if (ch == '<') {
+				token = assembleTag(str, strIndex);
+			} else if (Character.isLetter(ch)) {
+				token = assembleWord(str, strIndex);
+			} else if (isPunctuation(ch)) {
+				if (ch == '-') {
+					if (strIndex + 1 < str.length()) {
+						nextChar = str.charAt(strIndex + 1);
+						if (Character.isDigit(nextChar))
+							token = assembleNumber(str, strIndex);
+						else if (nextChar == '.' && strIndex + 2 < str.length()) {
+							nextChar = str.charAt(strIndex + 2);
+							if (Character.isDigit(nextChar))
+								token = assembleNumber(str, strIndex);
+						} else {
+							token = ch + "";
+						}
+					} else {
+						token = ch + "";
+					}
+				} else if (ch == '.') {
+					if (strIndex + 1 < str.length()) {
+						nextChar = str.charAt(strIndex + 1);
+						if (Character.isDigit(nextChar))
+							token = assembleNumber(str, strIndex);
+						else 
+							token = ch + "";
+					} else {
+						token = ch + "";
+					}
+				} else {
+					token = ch + "";
+				}
+			} else if (Character.isDigit(ch)) {
+				token = assembleNumber(str, strIndex);
 			}
 			
-			/* if the first character after word token is a -, it could 
-			 * be the start of a number */
-			
+			// token.equals("") also occurs when the token assembler returns a
+			// "". 
+			if (!token.equals("")) {
+				result[tokenNum] = token;
+				tokenNum++;
+				strIndex += token.length();
+			} else {
+				strIndex++;
+			}
 		}
 		
 		result = trim(result, tokenNum);
@@ -85,102 +83,250 @@ public class HTMLUtilities {
 		return result;
 	}
 	
-	/// bad code with indexOf
-	/*  check for <, check for > from that index, create
-		 * a substring with those two indices as the endpoints, 
-		 * then put the substring into the array /
-		int startIndex = -1;
-		int endIndex = -1;
-		int arrayIndex = 0;
-		String token = "";
+	/** 
+	 * assembles an HTML tag token
+	 */
+	private String assembleTag(String str, int strIndex) {
+		String tokenOut = "";
+		char ch = ' ';
+		char nextChar = '\0';
 		
-		startIndex = str.indexOf('<');
-		while (startIndex != -1) {
-			// find the endIndex
-			/* if the startIndex is for a '<', then we should look 
-			 * for the end of the HTML tag ('>')
-			 * if the startIndex is for a sequence of characters, then
-			 * we should look for the end of the sequence of characters,
-			 * if the startIndex is for punctuation, we don't need to do 
-			 * anything
-			 * if the startIndex is for numbers, then we need to find
-			 * the end of the number, which is the last number. Note that 
-			 * the numbers should only contain one e. 
-			 * Weird interactions with the e and the strings of words?
-			/
-			endIndex = str.indexOf('>', startIndex);
+		// looks ahead first
+		if (strIndex + 1 < str.length())
+			nextChar = str.charAt(strIndex + 1);
 			
-			// find the token
-			token = str.substring(startIndex, endIndex + 1);
+		// repeatedly checks if the character ahead is not the end of the tag '>' 
+		// also checks if nextChar is not reset to default value because the 
+		// string has ended
+		while (nextChar != '>' && nextChar != '\0') {
+			// saves the current character, adds it, and increments index
+			ch = str.charAt(strIndex);
+			tokenOut += ch;
+			strIndex++;
 			
-			// save in to the array
-			result[arrayIndex] = token;
-			arrayIndex++;
-			
-			// find the start index again
-			/* find the next angle bracket or the next letter, which
-			 * indicates the start of a sequence of letter. Then, look 
-			 * for a non-hyphen non-alphabetic characters, or a hyphen
-			 * that does not have an alphabetic character to the left of it
-			
-			int temp1 = str.indexOf('<', endIndex);
-			int temp2 = nextLetterIndex(str, endIndex);
-			//startIndex = str.indexOf('<', endIndex);
+			// looks ahead again
+			if (strIndex + 1 < str.length())
+				nextChar = str.charAt(strIndex + 1);
+			else
+				nextChar = '\0';
 		}
-	*/
+		// exits when the look ahead see an ending tag
+		
+		// saves the last character before '>'
+		ch = str.charAt(strIndex);
+		
+		// if we aren't at the end of the string, then nextChar should be '>'
+		tokenOut += "" + ch + nextChar;
+		
+		// if the nextChar is reset to default because we've reached the 
+		// end of the string before the tag ends, then the method outputs
+		// an empty string to signify an error.
+		if (nextChar == '\0') {
+			tokenOut == "";
+		}
+		
+		return tokenOut;
+	}
 	
-	/// bad code that didn't follow assignment suggestions
-	/*while (index < str.length()) {
-			ch = str.charAt(index);
-			if (ch == '<') { // start of a tag token
-				 // save the starting index into a variable to be used
-				 // later
-				 int startIndex = index;
-				 
-				 // increment index and store the next character
-				 // while the character is not the end angle bracket '>'
-				 do {
-					index++; 
-					ch = str.charAt(index);
-				 } while (ch != '>');
-				 
-				 // saves the resulting token
-				 token = str.substring(startIndex, index + 1);
-				 result[tokenNum] = token;
-				 tokenNum++; // number of tokens stored is increased.
-				 
-				 // increment index after we are done with a token
-				 index++;
-				 
-			} else if (ch.isLetter()) {
-				// save the starting index
-				int startIndex = index;
-				
-				// increment index, store the next character
-				// while the character is a letter or a hyphen surrounded
-				// by letters
-				do {
-					index++;
-					ch = str.charAt(index);
-				} while (ch.isLetter() || 
-					(ch == '-' && index < str.length() - 1 && 
-						str.charAt(index + 1).isLetter()); 
-					// the above works due to short-circuit eval
-				token = str.substring(startIndex, index);
-				result[tokenNum] = token;
-				tokenNum++; 
-				
-			} else if (/* ... ) {
-				
-			} else {
-				// not start of token, so just increment index
-				index++;
-			}
+	/** 
+	 * assembles a word token 
+	 */
+	private String assembleWord(String str, int strIndex) {
+		String tokenOut = "";
+		char ch = ' ';
+		char nextChar = '\0';
+		
+		// look at the next char
+		if (strIndex + 1 < str.length())
+			nextChar = str.charAt(strIndex + 1);
+		
+		// condition: if nextChar is good...
+		while ((Character.isLetter(nextChar) || nextChar == '-') && nextChar != '\0') {
+			//... save the current char and add it to token
+			ch = str.charAt(strIndex);
+			tokenOut += ch;
 			
-			/* if the first character after word token is a -, it could 
-			 * be the start of a number 
+			// increment strIndex and look at next char
+			strIndex++;
+			if (strIndex + 1 < str.length())
+				nextChar = str.charAt(strIndex + 1);
+			else 
+				nextChar = '\0';
 		}
-	*/
+		
+		// if nextChar is not good exit out of the loop. Save the current char. 
+		// If it's a letter then it will be saved. If it's a hyphen then it 
+		// will not be added to token.
+		ch = str.charAt(strIndex);
+		if (ch != '-') {
+			tokenOut += ch;
+		}
+		
+		return tokenOut;
+	}
+	
+	/** returns true if char ch is a punctuation and false otherwise */
+	private boolean isPunctuation(char ch) {
+		switch (ch) {
+			case '.': case ',': case ';': case ':': case '(': case ')': case '?':
+			case '!': case '=': case '&': case '~': case '+': case '-':
+				return true;
+			default:
+				return false;
+		}
+	}
+	
+	/**
+	 * Precondition: the characters in str at or after strIndex can form a valid
+	 * number
+	 * note that every number is in the form -[numbers].[numbers]e[-numbers],
+	 * where the '-'s, the '.', and the stuff after the e (and including the e) 
+	 * is optional. Note that a number can also start with '.' or '-.', since 
+	 * some people write numbers that way. This helps us group the code 
+	 * into chunks. 
+	 */
+	private String assembleNumber(String str, int strIndex) {
+		String tokenOut = "";
+		String subToken = "";
+		char ch = ' ';
+		char nextChar = '\0';
+		
+		// look at the current char
+		ch = str.charAt(strIndex);
+		
+		// if current char is a negative sign...
+		if (ch == '-') {
+			// look ahead if possible
+			if (strIndex + 1 < str.length()) {
+				nextChar = str.charAt(strIndex + 1);
+			}
+			// if nextChar is a digit or it's a '.'
+			if (Character.isDigit(nextChar) || nextChar == '.') {
+				// concatenate current char to the token and increment the index
+				tokenOut += ch;
+				strIndex++;
+				
+				// look at the new current char
+				ch = str.charAt(strIndex);
+				
+				// if it's a digit, assemble a sequence of numbers
+				if (Character.isDigit(ch)) {
+					subToken = assembleNumberSequence(str, strIndex);
+					tokenOut += subToken;
+					strIndex += subToken.length();
+				}
+			}
+		} else if (Character.isDigit(ch)) {
+			// if the current char is a digit, assemble a sequence of numbers
+			subToken = assembleNumberSequence(str, strIndex);
+			tokenOut += subToken;
+			strIndex += subToken.length();
+		}
+		
+		// now, check for the '.'
+		if (strIndex < str.length()) {
+			ch = str.charAt(strIndex);
+			if (ch == '.') {
+				if (strIndex + 1 < str.length()) {
+					nextChar = str.charAt(strIndex + 1);
+				}
+				
+				// if the nextChar is a digit, then the '.' is a valid part
+				// of our number
+				if (Character.isDigit(nextChar)) {
+					// add the '.' to the token
+					tokenOut += ch;
+					strIndex++;
+					
+					// assemble number sequence.
+					subToken = assembleNumberSequence(str, strIndex);
+					tokenOut += subToken;
+					strIndex += subToken.length();
+				}
+			} 
+		}
+		
+		// checking for e
+		if (strIndex < str.length()) {
+			ch = str.charAt(strIndex);
+			if (ch == 'e') {
+				if (strIndex + 1 < str.length()) {
+					nextChar = str.charAt(strIndex + 1);
+				}
+				if (nextChar == '-') {
+					// if it is a '-' after the 'e'...
+					if (strIndex + 2 < str.length()) {
+						// we look ahead another character
+						nextChar = str.charAt(strIndex + 2);
+						
+						// if there is a digit after '-', then 'e-...' is a 
+						// valid part of our number
+						if (Character.isDigit(nextChar)) {
+							// save the 'e'
+							tokenOut += ch;
+							strIndex++; 
+							
+							// save the '-'
+							ch = str.charAt(strIndex);
+							tokenOut += ch;
+							strIndex++;
+							
+							// save the sequence of numbers
+							subToken = assembleNumberSequence(str, strIndex);
+							tokenOut += subToken;
+						}
+					}
+				} else if (Character.isDigit(nextChar)) {
+					// if it is a digit after the 'e', then save the 'e'...
+					tokenOut += ch;
+					strIndex++;
+					
+					// ... and save the number sequence
+					subToken = assembleNumberSequence(str, strIndex);
+					tokenOut += subToken;
+					strIndex += subToken.length();
+				}
+			}
+		}
+		
+		// done with the entire token
+		return tokenOut;
+	}
+	
+	/** 
+	 * Note: This assembles a POSITIVE integer
+	 */
+	private String assembleNumberSequence(String str, int strIndex) {
+		String tokenOut = "";
+		char ch = ' ';
+		char nextChar = '\0';
+		
+		// save the current character, since it's guaranteed to be a part
+		// of the number
+		ch = str.charAt(strIndex);
+		tokenOut += ch;
+		
+		// look ahead if possible
+		if (strIndex + 1 < str.length()) {
+			nextChar = str.charAt(strIndex + 1);
+		}
+		
+		// repeatedly checks if the next character is a digit or if the next
+		// character actually exists in the string
+		while (Character.isDigit(nextChar) && strIndex + 1 < str.length()) {
+			// increment index to read the next character separately from nextChar
+			strIndex++;
+			ch = str.charAt(strIndex);
+			tokenOut += ch;
+			
+			// look ahead if possible
+			if (strIndex + 1 < str.length()) {
+				nextChar = str.charAt(strIndex + 1);
+			}
+		}
+		
+		return tokenOut;
+	}
 	
 	/** Trims an array of strings to a given length
 	 * 
@@ -196,17 +342,6 @@ public class HTMLUtilities {
 			output[i] = input[i];
 		}
 		return output;
-	}
-	
-	private int nextLetterIndex(String str, int startIndex) {
-		int i = startIndex;
-		while (i < str.length()) {
-			char ch = str.charAt(i);
-			if (Character.isLetter(ch))
-				return i;
-			i++;
-		}
-		//return ???
 	}
 	
 	/**
