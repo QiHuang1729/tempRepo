@@ -141,7 +141,6 @@ public class HTMLRender {
 		int index = 0;
 		String element = null;
 		
-		/*
 		int length = 0;
 		while (index < input.hasNext()) {
 			element = tokens[index];
@@ -192,7 +191,7 @@ public class HTMLRender {
 					}
 				}
 			}
-		}*/
+		}
 	}
 	
 	private int print(String toPrint) {
