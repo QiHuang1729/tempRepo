@@ -25,8 +25,22 @@ import java.util.Scanner;
  */
 public class HTMLRender {
 	
+	// maximum line lengths for each format type
+	private int MAX_LENGTH_H1 = 40;
+	private int MAX_LENGTH_H2 = 50;
+	private int MAX_LENGTH_H3 = 60;
+	private int MAX_LENGTH_H4 = 80;
+	private int MAX_LENGTH_H5 = 100;
+	private int MAX_LENGTH_H6 = 120;
+	private int MAX_LENGTH = 80;
+	
 	// the name of the HTML file
 	private String fileName;
+	
+	// format of each token for printing
+	private enum TokenFormat { PLAIN, BOLD, ITALIC, PREFORMAT, HEADING1, 
+		HEADING2, HEADING3, HEADING4, HEADING5, HEADING6 };
+	private TokenFormat format;
 	
 	// the array holding all the tokens of the HTML file
 	private String [] tokens;
@@ -44,6 +58,9 @@ public class HTMLRender {
 			System.out.println("Usage: java HTMLRender <htmlFileName>");
 		}
 		
+		// Initialize text format
+		format = TokenFormat.PLAIN;
+		
 		// Initialize token array
 		tokens = new String[TOKENS_SIZE];
 		
@@ -55,69 +72,33 @@ public class HTMLRender {
 	
 	public static void main(String[] args) {
 		HTMLRender hf = new HTMLRender(args);
-		System.out.println("\"".length()); // length is one!
-		//hf.run();
+		hf.run();
 	}
 	
 	public void run() {		
 		Scanner input = FileUtils.openToRead(fileName);
 		tokenizeHTMLFile(input);
-		
-		/*
-		// Sample renderings from HtmlPrinter class
-		
-		// Print plain text without line feed at end
-		browser.print("First line");
-		
-		// Print line feed
-		browser.println();
-		
-		// Print bold words and plain space without line feed at end
-		browser.printBold("bold words");
-		browser.print(" ");
-		
-		// Print italic words without line feed at end
-		browser.printItalic("italic words");
-		
-		// Print horizontal rule across window (includes line feed before and after)
-		browser.printHorizontalRule();
-		
-		// Print words, then line feed (printBreak)
-		browser.print("A couple of words");
-		browser.printBreak();
-		browser.printBreak();
-		
-		// Print a double quote
-		browser.print("\"");
-		
-		// Print Headings 1 through 6 (Largest to smallest)
-		browser.printHeading1("Heading1");
-		browser.printHeading2("Heading2");
-		browser.printHeading3("Heading3");
-		browser.printHeading4("Heading4");
-		browser.printHeading5("Heading5");
-		browser.printHeading6("Heading6");
-		
-		// Print pre-formatted text (optional)
-		browser.printPreformattedText("Preformat Monospace\tfont");
-		browser.printBreak();
-		browser.print("The end");
-		*/
+		printHTMLFile();
 	}
 	
+	/** tokenizes the entire HTML file line by line and saves them into the
+	 * String[] tokens. */
 	private void tokenizeHTMLFile(Scanner input) {
 		HTMLUtilities util = new HTMLUtilities();
-
+		
+		// index1 is for String[] tokens, and index2 is for the tokens in each line.
 		int index1 = 0;
 		int index2 = 0;
-		String line = "";
+		String fileLine = "";
 		String[] lineTokens = null;
 		
 		while (input.hasNext()) {
+			// resets the line index after each line is saved
 			index2 = 0;
-			line = input.nextLine();
-			lineTokens = util.tokenizeHTMLString(line);
+			fileLine = input.nextLine();
+			lineTokens = util.tokenizeHTMLString(fileLine);
 			
+			// saves each token in a line
 			while (index2 < lineTokens.length) {
 				tokens[index1] = lineTokens[index2];
 				index1++;
@@ -126,84 +107,309 @@ public class HTMLRender {
 		}
 	}
 	
+	/** Prints the HTML File. The program looks at each element one-by-one. 
+	 *  If it's a tag, it changes the formatting and prints any necessary
+	 *  characters or blank lines. If it's not a tag, then it is printed
+	 *  based on the formatting. */
 	private void printHTMLFile() {
-		// a field holding the format of the text (bold, italic)
-		int[] format;
-		final int BOLD = 0; // index for BOLD
-		final int ITALIC = 1; // index for ITALIC
-		final int HEADING = 2; // index for headings
-		final int TYPES = 3; // number of different types of formatting
-		
-		// Initialize Text Format
-		format = new int[TYPES];
-		format[BOLD] = format[ITALIC] = format[HEADING] = 0;
+		String element = null;
+		int lineLength = 0;
 		
 		int index = 0;
-		String element = null;
-		
-		int length = 0;
-		while (index < input.hasNext()) {
+		while (index < tokens.length && tokens[index] != null) {
 			element = tokens[index];
 			if (element.charAt(0) == '<') {
+				element = element.toLowerCase();
 				switch (element) {
 					case "<b>":
-						format[BOLD] = 1;
+						format = TokenFormat.BOLD;
 						break;
-					case "<\b>":
-						format[BOLD] = 0;
-						break;
+						
 					case "<i>":
-						format[ITALIC] = 1;
+						format = TokenFormat.ITALIC;
 						break;
-					case "<\i>":
-						format[ITALIC] = 0;
+						
+					case "<pre>":
+						format = TokenFormat.PREFORMAT;
 						break;
-					case "<h1>": case "<h2>": case "<h3>": case "<h4>":
-					case "<h5>": case "<h6>":
-						char size = element.charAt(element.indexOf("h") + 1);
-						format[HEADING] = Integer.parseInt(size);
-						break;
-					case "<\h1>": case "<\h2>": case "<\h3>": case "<\h4>":
-					case "<\h5>": case "<\h6>":
-						format[HEADING] = 0;
-						break;
-					case "<p>": 
+						
+					case "<h1>":
+						format = TokenFormat.HEADING1;
 						browser.println();
-						break;
-					case "<\p>":
 						browser.println();
-						element = tokens[index - 1];
-						if (!element.equals("<br>")) {
-							element = token[index + 1];
-							if (!element.equals("<p>")) {
-								browser.println();
-							}
+						lineLength = 0;
+						break;
+					
+					case "<h2>":
+						format = TokenFormat.HEADING2;
+						browser.println();
+						browser.println();
+						lineLength = 0;
+						break;
+						
+					case "<h3>":
+						format = TokenFormat.HEADING3;
+						browser.println();
+						browser.println();
+						lineLength = 0;
+						break;
+						
+					case "<h4>":
+						format = TokenFormat.HEADING4;
+						browser.println();
+						browser.println();
+						lineLength = 0;
+						break;
+						
+					case "<h5>":
+						format = TokenFormat.HEADING5;
+						browser.println();
+						browser.println();
+						lineLength = 0;
+						break;
+						
+					case "<h6>":
+						format = TokenFormat.HEADING6;
+						browser.println();
+						browser.println();
+						lineLength = 0;
+						break;
+						
+					case "</b>": case "</i>": case "</pre>":
+						format = TokenFormat.PLAIN;
+						break;
+						
+					case "</h1>": case "</h2>": case "</h3>": case "</h4>": 
+					case "</h5>": case "</h6>":
+						format = TokenFormat.PLAIN;
+						break;
+						
+						
+					case "<p>":
+						browser.println();
+						lineLength = 0;
+						element = tokens[index - 1].toLowerCase();
+						
+						// if there is no newline before this in the form of
+						// <br> or </p>, then we need two printlns to create 
+						// a completely blank line.
+						if (!element.equals("<br>") && 
+											!element.equals("</p>")) {
+							browser.println();
+							lineLength = 0;
 						}
+						element = tokens[index].toLowerCase();
 						break;
-					case "<q>": case "<\q>": 
-						length += print("\"");
+						
+					case "</p>": 
+						// first line printed
+						browser.println();
+						lineLength = 0;
+						element = tokens[index - 1].toLowerCase();
+						
+						// if no <br> or <p> before, then we do another println
+						// to create a completely blank line
+						if (!element.equals("<br>") && 
+											!element.equals("<p>")) {
+							browser.println();
+							lineLength = 0;
+						}
+						element = tokens[index].toLowerCase();
+						break;
+						
+					case "<q>": 
+						browser.print("\"");
+						lineLength += "\"".length();
+						break;
+					
+					case "</q>":
+						browser.print("\" ");
+						lineLength += "\" ".length();
+						break;
+						
+					case "<hr>":
+						browser.printHorizontalRule();
+						lineLength = 0;
+						break;
+						
+					case "<br>":
+						browser.printBreak();
+						lineLength = 0;
+						break;
 				}
 			} else {
-				if (format[HEADING] > 0) {
-					switch (format[HEADING]) {
-						case 1:
-							browser
-					}
+				switch (format) {
+					case HEADING1:
+						if (lineLength + element.length() > MAX_LENGTH_H1) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading1(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading1(" ");
+							lineLength++;
+						}
+						break;
+						
+					case HEADING2:
+						if (lineLength + element.length() > MAX_LENGTH_H2) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading2(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading2(" ");
+							lineLength++;
+						}
+						break;
+						
+					case HEADING3:
+						if (lineLength + element.length() > MAX_LENGTH_H3) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading3(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading3(" ");
+							lineLength++;
+						}
+						break;
+						
+					case HEADING4:
+						if (lineLength + element.length() > MAX_LENGTH_H4) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading4(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading4(" ");
+							lineLength++;
+						}
+						break;
+						
+					case HEADING5:
+						if (lineLength + element.length() > MAX_LENGTH_H5) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading5(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading5(" ");
+							lineLength++;
+						}
+						break;
+						
+					case HEADING6:
+						if (lineLength + element.length() > MAX_LENGTH_H6) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printHeading6(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+										!isPunctuation(tokens[index + 1])) {
+							browser.printHeading6(" ");
+							lineLength++;
+						}
+						break;
+					
+					case ITALIC:
+						if (lineLength + element.length() > MAX_LENGTH) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printItalic(element);
+						lineLength += element.length();
+						
+						if (index + 1 > tokens.length - 1 || 
+											!isPunctuation(tokens[index + 1])) {
+							browser.printItalic(" ");
+							lineLength++;
+						}
+						break;
+						
+					case BOLD:
+						if (lineLength + element.length() > MAX_LENGTH) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.printBold(element);
+						lineLength += element.length();
+						if (index + 1 > tokens.length - 1 || 
+											!isPunctuation(tokens[index + 1])) {
+							browser.printBold(" ");
+							lineLength++;
+						}
+						break;
+						
+					case PLAIN:
+						if (lineLength + element.length() > MAX_LENGTH) {
+							browser.println();
+							lineLength = 0;
+						}
+						
+						browser.print(element);
+						lineLength += element.length();
+						if (index + 1 > tokens.length - 1 || 
+											!isPunctuation(tokens[index + 1])) {
+							browser.print(" ");
+							lineLength++;
+						}
+						break;
+						
+					case PREFORMAT:
+						browser.printPreformattedText(element);
 				}
 			}
+			index++;
 		}
 	}
 	
-	private int print(String toPrint) {
-		browser.print(toPrint);
-		return toPrint.length();
+	/** Returns true if str is a punctuation and false otherwise */
+	private boolean isPunctuation(String str) {
+		boolean output = false;
+		if (str.equalsIgnoreCase("</q>")) 
+			output = true;
+		else {
+			if (str == null || str.length() != 1) {
+				output = false;
+			} else {
+				char ch = str.charAt(0);
+				switch (ch) {
+					case '.': case ',': case ';': case ':': case '(': case ')': case '?':
+					case '!': case '=': case '&': case '~': case '+': case '-':
+						output = true;
+						break;
+					default:
+						output = false;
+						break;
+				}
+			}
+		}
+		return output;
 	}
-	/*
-	private void applyTag() {
-		
-	}
-	
-	private void thing() {
-		
-	}*/
 }
