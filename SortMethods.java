@@ -71,49 +71,41 @@ public class SortMethods {
 	 *	@param arr		array of Integer objects to sort
 	 */
 	public void mergeSort(Integer [] arr) {
-		mergeSort(arr, 0, arr.length - 1);
+		Integer [] tempArr = new Integer[arr.length];
+		mergeSort(arr, tempArr, 0, arr.length - 1);
 	}
 	
-	private void mergeSort(Integer [] arr, int start, int end) {
+	// note: when debugging, just checking the logic of the code is fine
+	private void mergeSort(Integer [] arr, Integer [] tempArr, 
+							int start, int end) {
 		int range = end - start + 1;
 		if (range > 2) {
 			// split arrays below
-			int middle = -1;
+			int middle = (end + start) / 2; // middle is not range / 2
 			
-			if (range % 2 == 0) {
-				middle = (range - 1) / 2;
-			} else {
-				middle = range / 2;
-			}
+			mergeSort(arr, tempArr, start, middle);
+			mergeSort(arr, tempArr, middle + 1, end);
 			
-			System.out.println("Left");
-			System.out.println(start + ", " + middle);
-			mergeSort(arr, start, middle);
-			System.out.println("Right");
-			System.out.println(middle + 1 + ", " + end);
-			mergeSort(arr, middle + 1, end);
-			
-			
-			// combine arrays below
-			Integer [] tempArr = new Integer[range];
-
 			// i = first split index
 			// j = second split index
 			// k = tempArr index
+			/* note: k is initialized at start, not 0. It would only be 0
+			 * if you had a tempArr that was exactly the total size of 
+			 * the arrays currently being merged */
 			int i, j, k;
-			i = k = start;
+			i = k = start; 
 			j = middle + 1;
 			
 			// Exits when one of the pointers move off the array
-			while (i < middle + 1 && j < end) {
+			while (i <= middle && j <= end) /* end is included for j*/ {
 				// stores smaller element
-				// increments the pointer of the smaller element
+				// increments the pointer of the smaller element				
 				if (arr[i].compareTo(arr[j]) <= 0) {
-					arr[k] = arr[i];
-					System.out.println(j);
+					tempArr[k] = arr[i]; // remember to actually store this 
+										// in tempArr
 					i++;
 				} else if (arr[i].compareTo(arr[j]) > 0) {
-					arr[k] = arr[j];
+					tempArr[k] = arr[j];
 					j++;
 				}
 				// increment tempArr pointer
@@ -123,31 +115,32 @@ public class SortMethods {
 			// if one pointer is out of its split, flush the rest of the 
 			// split with the other pointer
 			if (i == middle + 1) {
-				while (j < range) {
-					arr[k] = arr[j];
+				while (j <= end) /* end is included for j*/ {
+					tempArr[k] = arr[j]; // remember to actually store this 
+										// in tempArr
 					j++;
 					k++;
+					
 				}
-			} else if (j == end) {
-				while (i < middle + 1) {
-					arr[k] = arr[i];
+			} else if (j == end + 1) /* out of range element for j is 
+															end + 1*/ {
+				while (i <= middle) {
+					tempArr[k] = arr[i];
 					i++;
 					k++;
 				}
 			}
 			
 			// copy results from temp array to original array
-			int index1 = start;
-			for (int index2 = 0; index2 < tempArr.length; index2++) {
-				arr[index1] = tempArr[index2];
-				index1++;
+			for (k = start; k <= end; k++) {
+				arr[k] = tempArr[k];
 			}
 		} else if (range == 2) {
 			// swap arrays
 			if (arr[start] > arr[end]) {
 				swap(arr, start, end);
-			}
-		} 
+			} 
+		}
 		// if the range is one, do nothing
 		// if the range is somehow less than or equal to 0, do nothing
 	}
