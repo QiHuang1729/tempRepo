@@ -31,6 +31,10 @@ public class SudokuSolver {
 		sm.run(args);
 	}
 	
+	/**
+	 * run - gets the puzzle name, loads the puzzle, prints the original
+	 * puzzle, and prints the solved puzzle
+	 */
 	public void run(String[] args) {
 		// get the name of the puzzle file
 		String puzzleFile = PUZZLE_FILE;
@@ -48,7 +52,8 @@ public class SudokuSolver {
 		printPuzzle();
 	}
 	
-	/**	Load the puzzle from a file
+	/**	loadPuzzle - Load the puzzle from a file
+	 * 
 	 *	@param filename		name of puzzle file
 	 */
 	public void loadPuzzle(String filename) {
@@ -59,7 +64,15 @@ public class SudokuSolver {
 		infile.close();
 	}
 	
-	/**	Solve the Sudoku puzzle using brute-force method. */
+	/**
+	 * 	solvePuzzle - Solve the Sudoku puzzle using brute-force method 
+	 * 	from row "row" and column "col."
+	 * 
+	 * 	@param row	The starting row
+	 * 	@param col	The starting col
+	 * 	@return	true if the puzzle is solved from row "row" and column
+	 * 	"col," false if the digits 1-9 are all invalid
+	 */
 	public boolean solvePuzzle(int row, int col) {
 		ArrayList<Integer> choices = new ArrayList<Integer>(DIGITS);
 		int index = 0;
@@ -104,6 +117,16 @@ public class SudokuSolver {
 		}
 	}
 	
+	/** 
+	 * isRepeated - checks if the candidate appears elsewhere in the 
+	 *	same row, column, or cell. The coordinates of the candidate are
+	 * 	described by "row" and "col"
+	 * 
+	 *	@param row	Row index of the candidate
+	 *	@param col	Column index of the candidate
+	 *	@return	returns true if the candidate is repeated and false
+	 * 	otherwise.
+	 */
 	private boolean isRepeated(int row, int col) {
 		for (int i = 0; i < puzzle[0].length; i++) {
 			if (i != col && puzzle[row][i] == puzzle[row][col]) {
