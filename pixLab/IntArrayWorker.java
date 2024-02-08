@@ -46,6 +46,71 @@ public class IntArrayWorker
   }
   
   /**
+   * Method to return the count of the number of times an integer passed appears
+   * in the matrix.
+   * @param num
+   * @return the total number of "num"s in the matrix
+   */
+  public int getCount (int num) {
+	  int count = 0;
+	  for (int[] rowArray : matrix) {
+		  for (int item: rowArray) {
+			  if (item == num) 
+				count++;
+		  }
+	  }
+	  
+	  return count;
+  }
+  
+  /**
+   * Method to return the largest number found in the matrix.
+   * @return the largest number in the matrix
+   */
+  public int getLargest () {
+	  int max = 0;
+	  for (int[] rowArray : matrix) {
+		  for (int item : rowArray) {
+			  if (item > max)
+				max = item;
+		  }
+	  }
+	  return max;
+  }
+  
+  /**
+   * Method to get the total of a column in the matrix
+   * @param column
+   * @return the sum of the numbers in the column of the matrix represented by 
+   *   the parameter
+   */
+  public int getColTotal (int column) {
+	  int total = 0;
+	  for (int[] rowArray : matrix) {
+		  total += rowArray[column];
+	  }
+	  return total;
+  }
+  
+  /**
+   * Method to reverse each row of a matrix
+   */
+  public void reverseRows () {
+	  int temp = -1;
+	  System.out.println("Array before reverseRows:");
+	  print();
+	  for (int[] rowArray : matrix) {
+		  for (int col = 0; col < rowArray.length / 2; col++) {
+			  temp = rowArray[col];
+			  rowArray[col] = rowArray[ (rowArray.length - 1) - col ];
+			  rowArray[ (rowArray.length - col) - 1 ] = temp;
+		  }
+	  }
+	  System.out.println("Array after reverseRows:");
+	  print();
+  }
+  
+  /**
    * Method to fill with an increasing count
    */
   public void fillCount()
