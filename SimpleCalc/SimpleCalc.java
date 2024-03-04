@@ -102,7 +102,7 @@ public class SimpleCalc {
 				 * end, a right parenthesis, or a lower precedence 
 				 * operation, in which case you should just evaluate it.
 				 */
-				 
+				
 				String prevOperator = operatorStack.peek();
 				if (hasPrecedence(theToken, prevOperator)) {
 					double num2 = valueStack.pop();
