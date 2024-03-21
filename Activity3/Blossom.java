@@ -28,5 +28,7 @@ public class Blossom extends Flower {
 		if (steps == lifespan) {
 			removeSelfFromGrid();
 		}
+		super.act();
+		steps++;
 	}
 }
